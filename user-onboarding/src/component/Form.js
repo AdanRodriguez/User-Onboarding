@@ -1,46 +1,73 @@
-import React from "react";
+import React,{useState, useEffect} from "react";
 import axios from "axios";
 import {Form, Field, withFormik} from "formik";
 import * as Yup from "yup";
 
-const LoginForm = (errors, touched) => {
+const LoginForm = ({errors, touched, values, status}) => {
+
+    const [forms, setForms] =useState([]);
+    useEffect(() => {
+        if (status) {
+            setForms([...forms, status]);
+        }
+    }, [status]);
+
     return (
     <div>
         <Form>
             <div>
+                <Field type="text" name="username" placeholder="Username" />
                 {touched.username && errors.username && (
                     <p className="error">{errors.username}</p>
                 )}
-                <Field type="text" name="username" placeholder="Username" />
             </div>
             
             <div>
+                <Field type="email" name="email" placeholder="Email" />
                 {touched.email && errors.email && (
                         <p className="error">{errors.email}</p>
                     )}
-                <Field type="email" name="email" placeholder="Email" />
             </div>
             
             <div>
+                <Field type="password" name="password" placeholder="Password" />
                 {touched.password && errors.password && (
                         <p className="error">{errors.password}</p>
                     )}
-                <Field type="password" name="password" placeholder="Password" />
             </div>
+                
+            <Field component="select" name="membership">
+                <option value="gold">Gold</option>
+                <option value="Silver">Silver</option>
+                <option value="Platinum">Platinum</option>
+            </Field>
 
-            <button>Submit!</button>
+            <label>
+                <Field type="checkbox" name="tos" checked={values.tos} />
+                Accept TOS
+            </label>
+
+            <button type="submit">Submit!</button>
         </Form>
+        {forms.map(item => (
+            <ul key={item.id}>
+                <p>Username: {item.username}</p>
+                <p>Email: {item.email}</p>
+                <p>Password: {item.password}</p>
+            </ul>
+        ))}
     </div>
       );
     };
 
 const FormikForm = withFormik({
-    mapPropsToValues({username, email, password}){
+    mapPropsToValues({username, email, password, tos, membership}){
         return {
             username: username || "",
             email: email || "",
-            password: password || ""
-
+            password: password || "",
+            tos: tos || false,
+            membership: membership || "silver"
         };
     },
 
@@ -50,7 +77,10 @@ const FormikForm = withFormik({
         password: Yup.string().min(6, "Password must be 6 characters or longer").required("Password is required")
         }),
 
-    handleSubmit(values) {
+    handleSubmit(values, {setStatus}) {
+        axios.post("https://reqres.in/api/users", values)
+        .then(response => {setStatus(response.data)})
+        .catch(err => console.log(err.response))
         console.log(values);
     }
 })(LoginForm);
